@@ -406,24 +406,38 @@ func moveFile(sourcePath string) {
 	}
 }
 
+func helper() {
+	fmt.Println("c: 清理并移动文件")
+	fmt.Println("j: 获取名称并生成json文件以便手动重命名")
+	fmt.Println("r: 根据json文件来重命名")
+	fmt.Println("n: 使用metatube来获取名字")
+	fmt.Println("f: 创建文件夹并移动文件")
+	return
+}
+
 func main() {
 	// 获取命令行参数
 	args := os.Args
 
-	if args[1] == "h" {
-		fmt.Println("Usage: main [n|f] [path]")
-		fmt.Println("c: 清理并移动文件")
-		fmt.Println("j: 获取名称并生成json文件以便手动重命名")
-		fmt.Println("r: 根据json文件来重命名")
-		fmt.Println("n: 使用metatube来获取名字")
-		fmt.Println("f: 创建文件夹并移动文件")
-		return
-	}
 	sourcePath := ""
-	if len(args) < 3 {
+	if len(args) == 1 {
+		helper()
+		return
+	} else if len(args) == 2 {
 		sourcePath = "/root/media"
 	} else {
 		sourcePath = args[2]
+		_, err := os.Stat(sourcePath)
+
+		if err == nil {
+			fmt.Println("开始处理文件夹:", sourcePath)
+		} else if os.IsNotExist(err) {
+			fmt.Println("文件夹不存在")
+			return
+		} else {
+			fmt.Println("发生错误:", err)
+			return
+		}
 	}
 
 	if args[1] == "n" {
