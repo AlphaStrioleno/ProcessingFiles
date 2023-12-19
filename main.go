@@ -177,7 +177,13 @@ func createNamesJSON(sourcePath string) {
 		log.Fatal(err)
 	}
 
-	outputFile, err := os.Create("output.json")
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Println("获取当前目录地址失败：", err)
+		return
+	}
+	out := filepath.Join(dir, "output.json")
+	outputFile, err := os.Create(out)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -196,7 +202,13 @@ func createNamesJSON(sourcePath string) {
 
 func renameFile(sourcePath string) {
 	// 读取JSON文件
-	file, err := os.ReadFile("output.json")
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Println("获取当前目录地址失败：", err)
+		return
+	}
+	out := filepath.Join(dir, "output.json")
+	file, err := os.ReadFile(out)
 	if err != nil {
 		panic(err)
 	}
