@@ -428,10 +428,10 @@ func moveFile(sourcePath string) {
 
 func helper() {
 	fmt.Println("c: 清理并移动文件")
-	fmt.Println("j: 获取名称并生成json文件以便手动重命名")
-	fmt.Println("r: 根据json文件来重命名")
-	fmt.Println("n: 使用metatube来获取名字")
-	fmt.Println("f: 创建文件夹并移动文件")
+	fmt.Println("j: 获取名称并生成output.json以便手动重命名, 使用tsz命令下载本地")
+	fmt.Println("r: 使用trz命令上传, 根据output.json文件来重命名")
+	fmt.Println("n: 使用metatube来获取信息生成data.json")
+	fmt.Println("f: 根据data.json创建文件夹并移动文件")
 	return
 }
 
