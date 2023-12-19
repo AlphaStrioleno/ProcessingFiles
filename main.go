@@ -240,6 +240,14 @@ func renameFile(sourcePath string) {
 					if err != nil {
 						return err
 					}
+				} else if fileInfo.Filename == "m" {
+					// 移动文件到指定文件夹
+					laterPath := filepath.Join(filepath.Dir(path), "Later")
+					err = os.Mkdir(laterPath, fs.ModePerm)
+					if err != nil {
+						newPath := filepath.Join(laterPath, d.Name())
+						err = os.Rename(path, newPath)
+					}
 				} else if fileInfo.Filename != fileNameWithoutExt {
 					// 重命名文件
 					newPath := filepath.Join(filepath.Dir(path), fileInfo.Filename+filepath.Ext(d.Name()))
