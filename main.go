@@ -377,6 +377,10 @@ func moveFile(sourcePath string) {
 	}
 	// 遍历json数据，处理文件
 	for k, v := range data {
+		// 如果Name为空，跳过
+		if v.Name == "" {
+			continue
+		}
 		// 创建文件夹
 		newDirPath := filepath.Join(sourcePath, v.Name, k)
 		err := os.MkdirAll(newDirPath, fs.ModePerm)
