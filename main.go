@@ -26,6 +26,7 @@ type FileInfo struct {
 var videoExtensions = map[string]bool{
 	".mp4": true, ".avi": true, ".mkv": true,
 	".flv": true, ".mov": true, ".wmv": true,
+	".rmvb": true, ".ts": true, ".3gp": true,
 	// 添加其他视频文件扩展名
 }
 
@@ -77,6 +78,7 @@ func checkAndDeleteEmpty(dir string) {
 	}
 	if len(files) == 0 {
 		err := os.Remove(dir)
+		println("删除文件夹:", dir)
 		if err != nil {
 			return
 		}
