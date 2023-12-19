@@ -116,6 +116,37 @@ func cleanFile(sourcePath string) {
 		} // 移动文件
 		println("移动文件:", oldPath, "=>", newPath)
 	}
+
+	// 删除空文件夹
+	err = filepath.Walk(sourcePath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// 如果是空文件夹
+		if info.IsDir() {
+			// 读取文件夹
+			files, err := os.ReadDir(path)
+			if err != nil {
+				return err
+			}
+
+			// 如果文件夹为空
+			if len(files) == 0 {
+				err := os.Remove(path)
+				if err != nil {
+					return err
+				} // 删除文件夹
+				println("删除文件夹:", path)
+			}
+		}
+
+		return nil
+
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func createNamesJSON(sourcePath string) {
