@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/metatube-community/metatube-sdk-go/engine"
+	"io"
 	"io/fs"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,6 +31,33 @@ var videoExtensions = map[string]bool{
 	".flv": true, ".mov": true, ".wmv": true,
 	".rmvb": true, ".ts": true, ".3gp": true,
 	// 添加其他视频文件扩展名
+}
+
+// 通过bark来发送完成通知到手机上
+func notice() {
+	url := "https://api.day.app/3469b985d923de6542a91e91625b311823350ed696fbbab0f1b6429d9ad1a6a7/已经完成了"
+	payload := []byte("")
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+	if err != nil {
+		fmt.Println("请求创建失败:", err)
+		return
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("请求发送失败:", err)
+		return
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(resp.Body)
+
+	fmt.Println("响应状态码:", resp.StatusCode)
 }
 
 // 检查文件是否为视频文件
@@ -367,6 +397,7 @@ func getNumber(sourcePath string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	notice()
 }
 
 func moveFile(sourcePath string) {
