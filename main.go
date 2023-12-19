@@ -55,6 +55,34 @@ func isLessThan120MB(path string) bool {
 	return sizeMB < 120
 }
 
+func checkAndDeleteEmpty(dir string) {
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		panic(err)
+	}
+
+	// 如果文件夹不为空，递归检查其子文件夹
+	if len(files) > 0 {
+		for _, file := range files {
+			if file.IsDir() {
+				checkAndDeleteEmpty(filepath.Join(dir, file.Name()))
+			}
+		}
+	}
+
+	// 再次检查该文件夹，如果现在为空（可能其子文件夹都被删除了），那么删除它
+	files, err = os.ReadDir(dir)
+	if err != nil {
+		panic(err)
+	}
+	if len(files) == 0 {
+		err := os.Remove(dir)
+		if err != nil {
+			return
+		}
+	}
+}
+
 func cleanFile(sourcePath string) {
 	var filesToMove []string
 
@@ -118,35 +146,7 @@ func cleanFile(sourcePath string) {
 	}
 
 	// 删除空文件夹
-	err = filepath.Walk(sourcePath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// 如果是空文件夹
-		if info.IsDir() {
-			// 读取文件夹
-			files, err := os.ReadDir(path)
-			if err != nil {
-				return err
-			}
-
-			// 如果文件夹为空
-			if len(files) == 0 {
-				err := os.Remove(path)
-				if err != nil {
-					return err
-				} // 删除文件夹
-				println("删除文件夹:", path)
-			}
-		}
-
-		return nil
-
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkAndDeleteEmpty(sourcePath)
 }
 
 func createNamesJSON(sourcePath string) {
