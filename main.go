@@ -94,7 +94,7 @@ func cleanFile(sourcePath string) {
 			return err
 		}
 
-		if !info.IsDir() {
+		if !info.IsDir() && filepath.Dir(path) != sourcePath {
 			if !isVideoFile(path) || isLessThan120MB(path) {
 				err := os.Remove(path)
 				if err != nil {
@@ -130,6 +130,7 @@ func cleanFile(sourcePath string) {
 			existFileCreateTime := existFileInfo.ModTime().Format("20060102150405")
 			existFileNewName := existFileCreateTime + "_" + fileName
 			err = os.Rename(newPath, filepath.Join(sourcePath, existFileNewName))
+			println("重命名已经存在的文件:", newPath, "=>", filepath.Join(sourcePath, existFileNewName))
 			if err != nil {
 				log.Fatal(err)
 			}
