@@ -116,30 +116,32 @@ func cleanFile(sourcePath string) {
 	// 移动文件
 	println("开始移动文件")
 	for _, oldPath := range filesToMove {
-		newName := filepath.Base(oldPath)
-		newPath := filepath.Join(sourcePath, newName)
+		fileName := filepath.Base(oldPath)
+		newPath := filepath.Join(sourcePath, fileName)
 
 		// 如果目标文件夹已存在同名文件，为两个文件都添加创建时间前缀
 		if _, err := os.Stat(newPath); err == nil {
 			// 获取目标文件夹中同名文件的创建时间，并将其格式化为字符串
-			fileInfo, err := os.Stat(newPath)
+			existFileInfo, err := os.Stat(newPath)
 			if err != nil {
 				log.Fatal(err)
 			}
-			createTime := fileInfo.ModTime().Format("20060102150405")
-			newName = createTime + "_" + newName
-			newPath = filepath.Join(sourcePath, newName)
+			// 将已经存在的同名文件重命名，添加创建时间前缀
+			existFileCreateTime := existFileInfo.ModTime().Format("20060102150405")
+			existFileNewName := existFileCreateTime + "_" + fileName
+			err = os.Rename(newPath, filepath.Join(sourcePath, existFileNewName))
+			if err != nil {
+				log.Fatal(err)
+			}
 
 			// 对要移动的文件做同样的处理
-			fileInfo, err = os.Stat(oldPath)
+			toMoveFileInfo, err := os.Stat(oldPath)
 			if err != nil {
 				log.Fatal(err)
 			}
-			createTime = fileInfo.ModTime().Format("20060102150405")
-			err = os.Rename(oldPath, filepath.Join(filepath.Dir(oldPath), createTime+"_"+filepath.Base(oldPath)))
-			if err != nil {
-				log.Fatal(err)
-			}
+			toMoveFileCreateTime := toMoveFileInfo.ModTime().Format("20060102150405")
+			toMoveFileNewName := toMoveFileCreateTime + "_" + fileName
+			newPath = filepath.Join(sourcePath, toMoveFileNewName)
 		}
 
 		err := os.Rename(oldPath, newPath)
