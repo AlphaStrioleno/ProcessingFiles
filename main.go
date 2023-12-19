@@ -88,6 +88,7 @@ func checkAndDeleteEmpty(dir string) {
 func cleanFile(sourcePath string) {
 	var filesToMove []string
 
+	println("开始清理文件夹:", sourcePath)
 	err := filepath.Walk(sourcePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -113,6 +114,7 @@ func cleanFile(sourcePath string) {
 	}
 
 	// 移动文件
+	println("开始移动文件")
 	for _, oldPath := range filesToMove {
 		newName := filepath.Base(oldPath)
 		newPath := filepath.Join(sourcePath, newName)
@@ -148,6 +150,7 @@ func cleanFile(sourcePath string) {
 	}
 
 	// 删除空文件夹
+	println("开始删除空文件夹")
 	checkAndDeleteEmpty(sourcePath)
 }
 
