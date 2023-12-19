@@ -3,14 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/metatube-community/metatube-sdk-go/engine"
 	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/metatube-community/metatube-sdk-go/engine"
 )
 
 type Data struct {
@@ -309,7 +308,7 @@ func getNumber(sourcePath string) {
 		// 创建一个空的Data结构体
 		data := Data{}
 
-		// 	data.File = fileName
+		// 处理name
 		if len(result.Actors) == 0 {
 			data.Name = "佚名"
 		} else if len(result.Actors) == 1 {
@@ -395,7 +394,7 @@ func moveFile(sourcePath string) {
 				return err
 			}
 
-			if d.IsDir() {
+			if d.IsDir() || filepath.Dir(path) != sourcePath {
 				return nil
 			}
 
