@@ -460,5 +460,3 @@ func main() {
 		renameFile(sourcePath)
 	}
 }
-
-//
