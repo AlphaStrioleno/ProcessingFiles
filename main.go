@@ -138,13 +138,13 @@ func cleanFile(sourcePath string) {
 			createTime = fileInfo.ModTime().Format("20060102150405")
 			err = os.Rename(oldPath, filepath.Join(filepath.Dir(oldPath), createTime+"_"+filepath.Base(oldPath)))
 			if err != nil {
-				return
+				log.Fatal(err)
 			}
 		}
 
 		err := os.Rename(oldPath, newPath)
 		if err != nil {
-			return
+			log.Fatal(err)
 		} // 移动文件
 		println("移动文件:", oldPath, "=>", newPath)
 	}
