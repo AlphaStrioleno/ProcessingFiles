@@ -303,8 +303,17 @@ func getNumber(sourcePath string) {
 			log.Printf("搜索失败: %v", err)
 			continue
 		}
-
 		result := results[0]
+		// 如果没有搜索结果，跳过
+		for _, r := range results {
+			if len(r.Actors) == 0 {
+				continue
+			} else {
+				result = r
+				break
+			}
+		}
+
 		// 创建一个空的Data结构体
 		data := Data{}
 
