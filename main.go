@@ -16,6 +16,7 @@ import (
 type Data struct {
 	Filename string `json:"filename"`
 	Name     string `json:"name"`
+	HomePage string `json:"homepage"`
 }
 
 type FileInfo struct {
@@ -328,6 +329,7 @@ func getNumber(sourcePath string) {
 			}
 		}
 		data.Filename = fileName
+		data.HomePage = result.Homepage
 
 		// 将Data结构体添加到map中，key是id
 		dataMap[result.Number] = data
