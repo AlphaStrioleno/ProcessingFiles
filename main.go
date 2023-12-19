@@ -35,7 +35,7 @@ var videoExtensions = map[string]bool{
 
 // 通过bark来发送完成通知到手机上
 func notice() {
-	url := "https://api.day.app/3469b985d923de6542a91e91625b311823350ed696fbbab0f1b6429d9ad1a6a7/已经完成了"
+	url := "https://api2.pushdeer.com/message/push?pushkey=PDU21180THMbOUv9clNBH810DysiU4SsDRsC4cRUs&text=已经完成了"
 	payload := []byte("")
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
