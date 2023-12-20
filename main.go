@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -23,6 +25,57 @@ type Data struct {
 
 type FileInfo struct {
 	Filename string `json:"filename"`
+}
+
+// Folder represents a folder in the filesystem with its name and sequence number
+type Folder struct {
+	Name      string
+	SeqNumber int
+}
+
+// Folders is a slice of Folder
+type Folders []Folder
+
+func (f Folders) Len() int           { return len(f) }
+func (f Folders) Less(i, j int) bool { return f[i].SeqNumber > f[j].SeqNumber }
+func (f Folders) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
+
+// GetFolders now returns a map with the base folder name as the key and a list of its variations as the value
+func GetFolders(dir string) (map[string]Folders, error) {
+	folderMap := make(map[string]Folders)
+
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			var baseName string
+			var seqNumber int
+
+			if strings.Contains(file.Name(), "(") {
+				baseName = strings.Split(file.Name(), "(")[0]
+				seqNumber, _ = strconv.Atoi(strings.TrimLeft(strings.Split(file.Name(), "(")[1], ")"))
+			} else {
+				baseName = file.Name()
+				seqNumber = -1
+			}
+
+			folder := Folder{
+				Name:      file.Name(),
+				SeqNumber: seqNumber,
+			}
+
+			folderMap[baseName] = append(folderMap[baseName], folder)
+		}
+	}
+
+	for _, folders := range folderMap {
+		sort.Sort(folders)
+	}
+
+	return folderMap, nil
 }
 
 // 视频文件扩展名列表
@@ -84,6 +137,80 @@ func isLessThan120MB(path string) bool {
 	sizeMB := size / 1024 / 1024 // 文件大小，单位为MB
 
 	return sizeMB < 120
+}
+
+func MoveFolders(srcDir string, tgtDir string, parentDir string) error {
+	files, err := os.ReadDir(srcDir)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			dstDir := tgtDir
+			if _, err := os.Stat(tgtDir + "/" + file.Name()); err == nil {
+				dstDir = parentDir
+			}
+
+			// Check if the destination directory exists, if not create it
+			if _, err := os.Stat(dstDir); os.IsNotExist(err) {
+				err := os.Mkdir(dstDir, 0755)
+				if err != nil {
+					return err
+				}
+			}
+
+			err := os.Rename(srcDir+"/"+file.Name(), dstDir+"/"+file.Name())
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func RemoveDir(dir string) error {
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+
+	if len(files) == 0 {
+		err := os.Remove(dir)
+		println("删除文件夹:", dir)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// 处理重复文件夹
+func handleDuplicateFolder(sourcePath string) {
+	folderMap, err := GetFolders(sourcePath)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	for _, folders := range folderMap {
+		baseFolder := folders[len(folders)-1]
+		for i := 0; i < len(folders)-1; i++ {
+			err := MoveFolders(sourcePath+"/"+folders[i].Name, sourcePath+"/"+baseFolder.Name, sourcePath)
+			println("移动文件夹:", sourcePath+"/"+folders[i].Name, "=>", sourcePath+"/"+baseFolder.Name)
+			if err != nil {
+				fmt.Println("Error:", err)
+				return
+			}
+			err = RemoveDir(sourcePath + "/" + folders[i].Name)
+			if err != nil {
+				fmt.Println("Error:", err)
+				return
+			}
+		}
+	}
 }
 
 func checkAndDeleteEmpty(dir string) {
@@ -501,6 +628,10 @@ func main() {
 		createNamesJSON(sourcePath)
 	} else if args[1] == "r" {
 		renameFile(sourcePath)
+	} else if args[1] == "d" {
+		handleDuplicateFolder(sourcePath)
+	} else {
+		helper()
 	}
 }
 
