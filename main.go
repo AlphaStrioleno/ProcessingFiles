@@ -483,6 +483,7 @@ func getNumber(sourcePath string) {
 		data.Filename = fileName
 		data.HomePage = result.Homepage
 
+		time.Sleep(3 * time.Second)
 		// 将Data结构体添加到map中，key是id
 		dataMap[result.Number] = data
 	}
@@ -544,8 +545,10 @@ func moveFile(sourcePath string) {
 				return nil
 			}
 
-			if strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)) == v.Filename {
-				newPath := filepath.Join(newDirPath, filepath.Base(path))
+			name := strings.TrimSuffix(d.Name(), filepath.Ext(d.Name()))
+
+			if name == v.Filename {
+				newPath := filepath.Join(newDirPath, k+filepath.Ext(d.Name()))
 				err = os.Rename(path, newPath)
 				fmt.Println("移动文件:", path, "=>", newPath)
 				time.Sleep(2 * time.Second)
@@ -570,6 +573,33 @@ func helper() {
 	fmt.Println("n: 使用metatube来获取信息生成data.json")
 	fmt.Println("f: 根据data.json创建文件夹并移动文件")
 	return
+}
+
+func renameByNumber(sourcePath string) {
+	err := filepath.WalkDir(sourcePath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() || !isVideoFile(path) {
+			return nil
+		}
+
+		fileName := strings.TrimSuffix(d.Name(), filepath.Ext(d.Name()))
+		folderName := filepath.Base(filepath.Dir(path))
+		if fileName != folderName {
+			newPath := filepath.Join(filepath.Dir(path), folderName+filepath.Ext(d.Name()))
+			err = os.Rename(path, newPath)
+			fmt.Println("重命名文件:", path, "=>", newPath)
+			if err != nil {
+				log.Printf("重命名文件失败: %v", err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		log.Printf("查找文件失败: %v", err)
+	}
 }
 
 func main() {
@@ -609,6 +639,8 @@ func main() {
 		renameFile(sourcePath)
 	} else if args[1] == "d" {
 		handleDuplicateFolder(sourcePath)
+	} else if args[1] == "n" {
+		renameByNumber(sourcePath)
 	} else {
 		helper()
 	}
