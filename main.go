@@ -378,10 +378,14 @@ func renameFile(sourcePath string) {
 				} else if fileInfo.Filename == "m" {
 					// 移动文件到指定文件夹
 					laterPath := filepath.Join(filepath.Dir(path), "Later")
-					err = os.Mkdir(laterPath, fs.ModePerm)
+					if _, err := os.Stat(laterPath); err != nil {
+						err = os.Mkdir(laterPath, fs.ModePerm)
+					}
+					newPath := filepath.Join(laterPath, d.Name())
+					err = os.Rename(path, newPath)
+					fmt.Println("移动文件:", path, "=>", newPath)
 					if err != nil {
-						newPath := filepath.Join(laterPath, d.Name())
-						err = os.Rename(path, newPath)
+						return err
 					}
 				} else if fileInfo.Filename != fileNameWithoutExt {
 					// 重命名文件
