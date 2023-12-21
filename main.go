@@ -596,6 +596,10 @@ func renameByNumber(sourcePath string) {
 		}
 
 		fileName := strings.TrimSuffix(d.Name(), filepath.Ext(d.Name()))
+		newStr := regexp.MustCompile(`cd\d+$`).ReplaceAllString(fileName, "")
+		if newStr != fileName {
+			fileName = newStr
+		}
 		folderName := filepath.Base(filepath.Dir(path))
 		if fileName != folderName {
 			newPath := filepath.Join(filepath.Dir(path), folderName+filepath.Ext(d.Name()))
