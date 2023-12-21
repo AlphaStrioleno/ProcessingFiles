@@ -1,149 +1,22 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/metatube-community/metatube-sdk-go/engine"
-	"io"
 	"io/fs"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
-	"strconv"
 	"strings"
 	"time"
 )
 
-type Data struct {
-	Filename string `json:"filename"`
-	Name     string `json:"name"`
-	HomePage string `json:"homepage"`
-}
-
-type FileInfo struct {
-	Filename string `json:"filename"`
-}
-
-// Folder represents a folder in the filesystem with its name and sequence number
-type Folder struct {
-	Name      string
-	SeqNumber int
-}
-
-// Folders is a slice of Folder
-type Folders []Folder
-
-func (f Folders) Len() int           { return len(f) }
-func (f Folders) Less(i, j int) bool { return f[i].SeqNumber > f[j].SeqNumber }
-func (f Folders) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
-
-// GetFolders now returns a map with the base folder name as the key and a list of its variations as the value
-func GetFolders(dir string) (map[string]Folders, error) {
-	folderMap := make(map[string]Folders)
-
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, file := range files {
-		if file.IsDir() {
-			var baseName string
-			var seqNumber int
-
-			if strings.Contains(file.Name(), "(") {
-				baseName = strings.Split(file.Name(), "(")[0]
-				seqNumber, _ = strconv.Atoi(strings.TrimLeft(strings.Split(file.Name(), "(")[1], ")"))
-			} else {
-				baseName = file.Name()
-				seqNumber = -1
-			}
-
-			folder := Folder{
-				Name:      file.Name(),
-				SeqNumber: seqNumber,
-			}
-
-			folderMap[baseName] = append(folderMap[baseName], folder)
-		}
-	}
-
-	for _, folders := range folderMap {
-		sort.Sort(folders)
-	}
-
-	return folderMap, nil
-}
-
-// 视频文件扩展名列表
-var videoExtensions = map[string]bool{
-	".mp4": true, ".avi": true, ".mkv": true,
-	".flv": true, ".mov": true, ".wmv": true,
-	".rmvb": true, ".ts": true, ".3gp": true,
-	// 添加其他视频文件扩展名
-}
-
-// 通过bark来发送完成通知到手机上
-func notice() {
-	url := "https://api2.pushdeer.com/message/push?pushkey=PDU21180THMbOUv9clNBH810DysiU4SsDRsC4cRUs&text=已经完成了"
-	payload := []byte("")
-
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
-	if err != nil {
-		fmt.Println("请求创建失败:", err)
-		return
-	}
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("请求发送失败:", err)
-		return
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(resp.Body)
-
-	fmt.Println("响应状态码:", resp.StatusCode)
-}
-
-// 检查文件是否为视频文件
-func isVideoFile(path string) bool {
-	ext := strings.ToLower(filepath.Ext(path))
-	return videoExtensions[ext]
-}
-
-// 检查文件大小是否小于120MB
-func isLessThan120MB(path string) bool {
-	file, err := os.Open(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-
-		}
-	}(file)
-
-	fileInfo, _ := file.Stat()
-	size := fileInfo.Size()      // 文件大小，单位为字节
-	sizeMB := size / 1024 / 1024 // 文件大小，单位为MB
-
-	return sizeMB < 120
-}
-
-func MoveFolders(srcDir string, tgtDir string, parentDir string) error {
+func MoveFolders(srcDir string, tgtDir string, parentDir string) {
 	files, err := os.ReadDir(srcDir)
 	if err != nil {
-		return err
+		println("Error:", err)
 	}
 
 	for _, file := range files {
@@ -154,25 +27,15 @@ func MoveFolders(srcDir string, tgtDir string, parentDir string) error {
 			}
 
 			// Check if the destination directory exists, if not create it
-			if _, err := os.Stat(dstDir); os.IsNotExist(err) {
-				err := os.Mkdir(dstDir, 0755)
-				if err != nil {
-					return err
-				}
-			}
-
-			err := os.Rename(srcDir+"/"+file.Name(), dstDir+"/"+file.Name())
-			if err != nil {
-				return err
-			}
+			MakeDir(dstDir)
+			RenameMove(srcDir+"/"+file.Name(), dstDir+"/"+file.Name())
 		}
 	}
 
-	return nil
 }
 
-// 处理重复文件夹
-func handleDuplicateFolder(sourcePath string) {
+// HandleDuplicateFolder 处理重复文件夹
+func HandleDuplicateFolder(sourcePath string) {
 	folderMap, err := GetFolders(sourcePath)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -182,47 +45,13 @@ func handleDuplicateFolder(sourcePath string) {
 	for _, folders := range folderMap {
 		baseFolder := folders[len(folders)-1]
 		for i := 0; i < len(folders)-1; i++ {
-			err := MoveFolders(sourcePath+"/"+folders[i].Name, sourcePath+"/"+baseFolder.Name, sourcePath)
-			println("移动文件夹:", sourcePath+"/"+folders[i].Name, "=>", sourcePath+"/"+baseFolder.Name)
-			if err != nil {
-				fmt.Println("Error:", err)
-				return
-			}
+			MoveFolders(sourcePath+"/"+folders[i].Name, sourcePath+"/"+baseFolder.Name, sourcePath)
 		}
 	}
-	checkAndDeleteEmpty(sourcePath)
+	CheckAndDeleteEmpty(sourcePath)
 }
 
-func checkAndDeleteEmpty(dir string) {
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		panic(err)
-	}
-
-	// 如果文件夹不为空，递归检查其子文件夹
-	if len(files) > 0 {
-		for _, file := range files {
-			if file.IsDir() {
-				checkAndDeleteEmpty(filepath.Join(dir, file.Name()))
-			}
-		}
-	}
-
-	// 再次检查该文件夹，如果现在为空（可能其子文件夹都被删除了），那么删除它
-	files, err = os.ReadDir(dir)
-	if err != nil {
-		panic(err)
-	}
-	if len(files) == 0 {
-		err := os.Remove(dir)
-		println("删除文件夹:", dir)
-		if err != nil {
-			return
-		}
-	}
-}
-
-func cleanFile(sourcePath string) {
+func CleanFile(sourcePath string) {
 	var filesToMove []string
 
 	println("开始清理文件夹:", sourcePath)
@@ -233,11 +62,7 @@ func cleanFile(sourcePath string) {
 
 		if !info.IsDir() && filepath.Dir(path) != sourcePath {
 			if !isVideoFile(path) || isLessThan120MB(path) {
-				err := os.Remove(path)
-				if err != nil {
-					return err
-				} // 删除文件
-				println("删除文件:", path)
+				RemoveFile(path)
 			} else {
 				filesToMove = append(filesToMove, path)
 			}
@@ -282,19 +107,15 @@ func cleanFile(sourcePath string) {
 			newPath = filepath.Join(sourcePath, toMoveFileNewName)
 		}
 
-		err := os.Rename(oldPath, newPath)
-		if err != nil {
-			log.Fatal(err)
-		} // 移动文件
-		println("移动文件:", oldPath, "=>", newPath)
+		RenameMove(oldPath, newPath)
 	}
 
 	// 删除空文件夹
 	println("开始删除空文件夹")
-	checkAndDeleteEmpty(sourcePath)
+	CheckAndDeleteEmpty(sourcePath)
 }
 
-func createNamesJSON(sourcePath string) {
+func CreateNamesJSON(sourcePath string) {
 	files, err := os.ReadDir(sourcePath)
 	if err != nil {
 		log.Fatal(err)
@@ -314,101 +135,52 @@ func createNamesJSON(sourcePath string) {
 		log.Fatal(err)
 	}
 
-	dir, err := os.Getwd()
-	if err != nil {
-		fmt.Println("获取当前目录地址失败：", err)
-		return
-	}
-	out := filepath.Join(dir, "output.json")
-	outputFile, err := os.Create(out)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func(outputFile *os.File) {
-		err := outputFile.Close()
-		if err != nil {
-
-		}
-	}(outputFile)
-
-	_, err = outputFile.Write(jsonData)
-	if err != nil {
-		log.Fatal(err)
-	}
+	WriteJSON("output.json", jsonData)
 }
 
-func renameFile(sourcePath string) {
+func RenameFile(sourcePath string) {
 	// 读取JSON文件
-	dir, err := os.Getwd()
-	if err != nil {
-		fmt.Println("获取当前目录地址失败：", err)
-		return
-	}
-	out := filepath.Join(dir, "output.json")
-	file, err := os.ReadFile(out)
-	if err != nil {
-		panic(err)
-	}
-
-	// 解析JSON文件
-	filesToRename := map[string]FileInfo{}
-	err = json.Unmarshal(file, &filesToRename)
-	if err != nil {
-		panic(err)
-	}
-
+	data := map[string]FileInfo{}
+	j := ReadJSON("output.json", data).(map[string]interface{})
 	// 遍历指定的文件夹
-	err = filepath.WalkDir(sourcePath, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(sourcePath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
 		// 如果是文件
 		if !d.IsDir() {
-			fileNameWithoutExt := strings.TrimSuffix(d.Name(), filepath.Ext(d.Name()))
-
+			file := d.Name()
+			ext := filepath.Ext(file)
+			nameWithoutSuffix := strings.TrimSuffix(file, ext)
 			// 如果在JSON中找到键
-			if fileInfo, exists := filesToRename[fileNameWithoutExt]; exists {
-				if fileInfo.Filename == "d" {
-					// 删除文件
-					err = os.Remove(path)
-					fmt.Println("删除文件:", path)
-					if err != nil {
-						return err
-					}
-				} else if fileInfo.Filename == "m" {
-					// 移动文件到指定文件夹
+			if fileInfo, exists := j[nameWithoutSuffix]; exists {
+				fileName := fileInfo.(map[string]interface{})["Filename"].(string)
+
+				if fileName == "d" {
+					RemoveFile(path)
+				} else if fileName == "m" {
 					laterPath := filepath.Join(filepath.Dir(path), "Later")
-					if _, err := os.Stat(laterPath); err != nil {
-						err = os.Mkdir(laterPath, fs.ModePerm)
-					}
+					MakeDir(laterPath)
 					newPath := filepath.Join(laterPath, d.Name())
-					err = os.Rename(path, newPath)
-					fmt.Println("移动文件:", path, "=>", newPath)
-					if err != nil {
-						return err
-					}
-				} else if fileInfo.Filename != fileNameWithoutExt {
-					// 重命名文件
-					newPath := filepath.Join(filepath.Dir(path), fileInfo.Filename+filepath.Ext(d.Name()))
-					err = os.Rename(path, newPath)
-					fmt.Println("重命名文件:", path, "=>", newPath)
-					if err != nil {
-						return err
-					}
+					RenameMove(path, newPath)
+				} else if fileName != nameWithoutSuffix {
+					newPath := filepath.Join(filepath.Dir(path), fileName+ext)
+					RenameMove(path, newPath)
 				}
+
 			}
 		}
 
 		return nil
-	})
 
+	})
 	if err != nil {
 		panic(err)
 	}
 }
 
-func getNames(sourcePath string) (nameList []string, err error) {
+func GetFileNames(sourcePath string) (nameList []string, err error) {
 	files, err := os.ReadDir(sourcePath) // 读取文件夹
 	if err != nil {
 		fmt.Println("读取文件夹失败:", err)
@@ -429,10 +201,10 @@ func getNames(sourcePath string) (nameList []string, err error) {
 	return fileList, nil
 }
 
-func getNumber(sourcePath string) {
+func GetNumber(sourcePath string) {
 	app := engine.Default()
 
-	nameList, err := getNames(sourcePath)
+	nameList, err := GetFileNames(sourcePath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -498,51 +270,27 @@ func getNumber(sourcePath string) {
 		log.Fatal(err)
 	}
 	// 将JSON写入到文件中
-	f, _ := os.OpenFile("data.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-
-		}
-	}(f)
-	_, err = f.Write(jsonData)
-	if err != nil {
-		log.Fatal(err)
-	}
-	notice()
+	WriteJSON("data.json", jsonData)
+	Notice()
 }
 
-func moveFile(sourcePath string) {
+func MoveFile(sourcePath string) {
 	// 读取json文件
-	jsonData, err := os.ReadFile("data.json")
-	if err != nil {
-		log.Printf("读取json文件失败: %v", err)
-		return
-	}
-	// 解析json数据
 	data := make(map[string]Data)
-	err = json.Unmarshal(jsonData, &data)
-	if err != nil {
-		log.Printf("解析json数据失败: %v", err)
-		return
-	}
-	// 遍历json数据，处理文件
-	for k, v := range data {
+	r := ReadJSON("output.json", data).(map[string]interface{})
+
+	for k, v := range r {
 		// 如果Name为空，跳过
-		if v.Name == "" {
+		value := v.(map[string]interface{})
+		if value["Name"] == "" {
 			continue
 		}
 		// 创建文件夹
-		newDirPath := filepath.Join(sourcePath, v.Name, k)
-		if _, err := os.Stat(newDirPath); err == nil {
-			err := os.MkdirAll(newDirPath, fs.ModePerm)
-			if err != nil {
-				log.Printf("创建文件夹失败: %v", err)
-			}
-		}
+		newDirPath := filepath.Join(sourcePath, value["Name"].(string), k)
+		MakeDir(newDirPath)
 
 		// 查找并移动文件
-		err = filepath.WalkDir(sourcePath, func(path string, d fs.DirEntry, err error) error {
+		err := filepath.WalkDir(sourcePath, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -553,17 +301,13 @@ func moveFile(sourcePath string) {
 
 			name := strings.TrimSuffix(d.Name(), filepath.Ext(d.Name()))
 
-			if name == v.Filename {
+			if name == value["Filename"].(string) {
 				matches := regexp.MustCompile(`cd(\d+)$`).FindStringSubmatch(strings.ToLower(name))
 				if len(matches) > 1 {
 					k = k + matches[1]
 				}
 				newPath := filepath.Join(newDirPath, k+filepath.Ext(d.Name()))
-				err = os.Rename(path, newPath)
-				if err != nil {
-					log.Printf("移动文件失败: %v", err)
-				}
-				fmt.Println("移动文件:", path, "=>", newPath)
+				RenameMove(path, newPath)
 				time.Sleep(2 * time.Second)
 			}
 			return nil
@@ -585,7 +329,35 @@ func helper() {
 	return
 }
 
-func renameByNumber(sourcePath string) {
+func GetFolderJSON(sourcePath string) {
+	filesMap := make(map[string]string)
+
+	err := filepath.Walk(sourcePath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// 只处理第二层的文件或文件夹
+		if len(filepath.SplitList(path)) == 2 {
+			filesMap[info.Name()] = path
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		fmt.Println("遍历文件夹出错：", err)
+	}
+
+	result, err := json.Marshal(filesMap)
+	if err != nil {
+		fmt.Println("JSON 序列化出错：", err)
+	}
+
+	WriteJSON("folders.json", result)
+}
+
+func RenameByNumber(sourcePath string) {
 	err := filepath.WalkDir(sourcePath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -603,11 +375,7 @@ func renameByNumber(sourcePath string) {
 		folderName := filepath.Base(filepath.Dir(path))
 		if fileName != folderName {
 			newPath := filepath.Join(filepath.Dir(path), folderName+filepath.Ext(d.Name()))
-			err = os.Rename(path, newPath)
-			fmt.Println("重命名文件:", path, "=>", newPath)
-			if err != nil {
-				log.Printf("重命名文件失败: %v", err)
-			}
+			RenameMove(path, newPath)
 		}
 		return nil
 	})
@@ -642,19 +410,21 @@ func main() {
 	}
 
 	if args[1] == "n" {
-		getNumber(sourcePath)
+		GetNumber(sourcePath)
 	} else if args[1] == "f" {
-		moveFile(sourcePath)
+		MoveFile(sourcePath)
 	} else if args[1] == "c" {
-		cleanFile(sourcePath)
+		CleanFile(sourcePath)
 	} else if args[1] == "j" {
-		createNamesJSON(sourcePath)
+		CreateNamesJSON(sourcePath)
 	} else if args[1] == "r" {
-		renameFile(sourcePath)
+		RenameFile(sourcePath)
 	} else if args[1] == "d" {
-		handleDuplicateFolder(sourcePath)
+		HandleDuplicateFolder(sourcePath)
 	} else if args[1] == "n" {
-		renameByNumber(sourcePath)
+		RenameByNumber(sourcePath)
+	} else if args[1] == "o" {
+		GetFolderJSON(sourcePath)
 	} else {
 		helper()
 	}
