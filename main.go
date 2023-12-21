@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -533,10 +534,11 @@ func moveFile(sourcePath string) {
 		}
 		// 创建文件夹
 		newDirPath := filepath.Join(sourcePath, v.Name, k)
-		err := os.MkdirAll(newDirPath, fs.ModePerm)
-		if err != nil {
-			log.Printf("创建文件夹失败: %v", err)
-			continue
+		if _, err := os.Stat(newDirPath); err == nil {
+			err := os.MkdirAll(newDirPath, fs.ModePerm)
+			if err != nil {
+				log.Printf("创建文件夹失败: %v", err)
+			}
 		}
 
 		// 查找并移动文件
@@ -552,13 +554,17 @@ func moveFile(sourcePath string) {
 			name := strings.TrimSuffix(d.Name(), filepath.Ext(d.Name()))
 
 			if name == v.Filename {
+				matches := regexp.MustCompile(`cd(\d+)$`).FindStringSubmatch(strings.ToLower(name))
+				if len(matches) > 1 {
+					k = k + matches[1]
+				}
 				newPath := filepath.Join(newDirPath, k+filepath.Ext(d.Name()))
 				err = os.Rename(path, newPath)
-				fmt.Println("移动文件:", path, "=>", newPath)
-				time.Sleep(2 * time.Second)
 				if err != nil {
 					log.Printf("移动文件失败: %v", err)
 				}
+				fmt.Println("移动文件:", path, "=>", newPath)
+				time.Sleep(2 * time.Second)
 			}
 			return nil
 		})
