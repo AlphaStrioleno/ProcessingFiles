@@ -143,7 +143,7 @@ func RenameMove(oldPath string, newPath string) {
 	}
 }
 
-func ReadJSON(path string, data interface{}) interface{} {
+func ReadJSON(path string) []byte {
 	file, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
@@ -163,13 +163,14 @@ func ReadJSON(path string, data interface{}) interface{} {
 	if err != nil {
 		log.Fatal(err)
 	}
+	return b
 
 	//data := make(map[string]FileInfo)
-	err = json.Unmarshal(b, &data)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return data
+	//err = json.Unmarshal(b, &data)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//return data
 }
 
 func WriteJSON(path string, data interface{}) {

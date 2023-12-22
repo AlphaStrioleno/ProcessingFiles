@@ -141,9 +141,14 @@ func CreateNamesJSON(sourcePath string) {
 func RenameFile(sourcePath string) {
 	// 读取JSON文件
 	data := map[string]FileInfo{}
-	j := ReadJSON("output.json", data).(map[string]interface{})
+	// 读取json文件
+	r := ReadJSON("output.json")
+	err := json.Unmarshal(r, &data)
+	if err != nil {
+
+	}
 	// 遍历指定的文件夹
-	err := filepath.WalkDir(sourcePath, func(path string, d fs.DirEntry, err error) error {
+	err = filepath.WalkDir(sourcePath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -154,8 +159,8 @@ func RenameFile(sourcePath string) {
 			ext := filepath.Ext(file)
 			nameWithoutSuffix := strings.TrimSuffix(file, ext)
 			// 如果在JSON中找到键
-			if fileInfo, exists := j[nameWithoutSuffix]; exists {
-				fileName := fileInfo.(map[string]interface{})["Filename"].(string)
+			if fileInfo, exists := data[nameWithoutSuffix]; exists {
+				fileName := fileInfo.Filename
 
 				if fileName == "d" {
 					RemoveFile(path)
@@ -277,16 +282,19 @@ func GetNumber(sourcePath string) {
 func MoveFile(sourcePath string) {
 	// 读取json文件
 	data := make(map[string]Data)
-	r := ReadJSON("output.json", data).(map[string]interface{})
+	//r := ReadJSON("output.json", data).(map[string]Data)
+	r := ReadJSON("data.json")
+	err := json.Unmarshal(r, &data)
+	if err != nil {
 
-	for k, v := range r {
+	}
+	for k, v := range data {
 		// 如果Name为空，跳过
-		value := v.(map[string]interface{})
-		if value["Name"] == "" {
+		if v.Name == "" {
 			continue
 		}
 		// 创建文件夹
-		newDirPath := filepath.Join(sourcePath, value["Name"].(string), k)
+		newDirPath := filepath.Join(sourcePath, v.Name, k)
 		MakeDir(newDirPath)
 
 		// 查找并移动文件
@@ -301,7 +309,7 @@ func MoveFile(sourcePath string) {
 
 			name := strings.TrimSuffix(d.Name(), filepath.Ext(d.Name()))
 
-			if name == value["Filename"].(string) {
+			if name == v.Name {
 				matches := regexp.MustCompile(`cd(\d+)$`).FindStringSubmatch(strings.ToLower(name))
 				if len(matches) > 1 {
 					k = k + matches[1]
