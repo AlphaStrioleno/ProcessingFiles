@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -120,10 +119,11 @@ func isVideoFile(path string) bool {
 func MakeDir(dir string) {
 	// 检查文件夹是否存在
 	if _, err := os.Stat(dir); err == nil {
-		err := os.Mkdir(dir, fs.ModePerm)
-		if err != nil {
-			println("创建文件夹失败:", dir)
-		}
+		return
+	}
+	err := os.MkdirAll(dir, fs.ModePerm)
+	if err != nil {
+		println("创建文件夹失败:", dir, err)
 	}
 
 }
@@ -138,7 +138,7 @@ func RenameMove(oldPath string, newPath string) {
 	err := os.Rename(oldPath, newPath)
 	println("移动文件:", oldPath, "=>", newPath)
 	if err != nil {
-		println("重命名文件失败:", oldPath)
+		println("重命名/移动文件失败:", oldPath, err)
 	}
 }
 
@@ -170,30 +170,6 @@ func ReadJSON(path string) []byte {
 	//	log.Fatal(err)
 	//}
 	//return data
-}
-
-func WriteJSON(path string, data interface{}) {
-	// 创建文件
-	file, err := os.Create(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-
-		}
-	}(file)
-
-	// 将数据写入文件
-	b, err := json.Marshal(data)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = file.Write(b)
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func CheckAndDeleteEmpty(dir string) {

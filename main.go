@@ -135,7 +135,20 @@ func CreateNamesJSON(sourcePath string) {
 		log.Fatal(err)
 	}
 
-	WriteJSON("output.json", jsonData)
+	file, err := os.Create("output.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+
+		}
+	}(file)
+	_, err = file.Write(jsonData)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func RenameFile(sourcePath string) {
@@ -165,7 +178,7 @@ func RenameFile(sourcePath string) {
 				if fileName == "d" {
 					RemoveFile(path)
 				} else if fileName == "m" {
-					laterPath := filepath.Join(filepath.Dir(path), "Later")
+					laterPath := filepath.Join(sourcePath, "Later")
 					MakeDir(laterPath)
 					newPath := filepath.Join(laterPath, d.Name())
 					RenameMove(path, newPath)
@@ -275,7 +288,20 @@ func GetNumber(sourcePath string) {
 		log.Fatal(err)
 	}
 	// 将JSON写入到文件中
-	WriteJSON("data.json", jsonData)
+	file, err := os.Create("data.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+
+		}
+	}(file)
+	_, err = file.Write(jsonData)
+	if err != nil {
+		log.Fatal(err)
+	}
 	Notice()
 }
 
@@ -293,27 +319,30 @@ func MoveFile(sourcePath string) {
 		if v.Name == "" {
 			continue
 		}
-		// 创建文件夹
-		newDirPath := filepath.Join(sourcePath, v.Name, k)
-		MakeDir(newDirPath)
-
 		// 查找并移动文件
 		err := filepath.WalkDir(sourcePath, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
 
-			if d.IsDir() || filepath.Dir(path) != sourcePath {
+			//println(filepath.Dir(path), sourcePath)
+			if d.IsDir() {
+				return nil
+			}
+			if filepath.Dir(path) != sourcePath {
 				return nil
 			}
 
 			name := strings.TrimSuffix(d.Name(), filepath.Ext(d.Name()))
 
-			if name == v.Name {
+			if name == v.Filename {
 				matches := regexp.MustCompile(`cd(\d+)$`).FindStringSubmatch(strings.ToLower(name))
 				if len(matches) > 1 {
 					k = k + matches[1]
 				}
+				// 创建文件夹
+				newDirPath := filepath.Join(sourcePath, v.Name, k)
+				MakeDir(newDirPath)
 				newPath := filepath.Join(newDirPath, k+filepath.Ext(d.Name()))
 				RenameMove(path, newPath)
 				time.Sleep(2 * time.Second)
@@ -345,8 +374,17 @@ func GetFolderJSON(sourcePath string) {
 			return err
 		}
 
+		if !info.IsDir() {
+			return nil
+		}
+		if filepath.Dir(path) == sourcePath {
+			return nil
+		}
 		// 只处理第二层的文件或文件夹
-		if len(filepath.SplitList(path)) == 2 {
+		folderPathLen := len(strings.Split(path, string(os.PathSeparator)))
+		sourcePathLen := len(strings.Split(sourcePath, string(os.PathSeparator)))
+		//println(folderPathLen, sourcePathLen)
+		if folderPathLen == sourcePathLen+2 {
 			filesMap[info.Name()] = path
 		}
 
@@ -362,7 +400,21 @@ func GetFolderJSON(sourcePath string) {
 		fmt.Println("JSON 序列化出错：", err)
 	}
 
-	WriteJSON("folders.json", result)
+	file, err := os.Create("folders.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+
+		}
+	}(file)
+	_, err = file.Write(result)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//WriteJSON("folders.json", result)
 }
 
 func RenameByNumber(sourcePath string) {
@@ -392,7 +444,7 @@ func RenameByNumber(sourcePath string) {
 	}
 }
 
-func main() {
+func Run() {
 	// 获取命令行参数
 	args := os.Args
 
@@ -436,6 +488,10 @@ func main() {
 	} else {
 		helper()
 	}
+}
+
+func main() {
+	Run()
 }
 
 //
