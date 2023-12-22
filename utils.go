@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -119,14 +120,12 @@ func isVideoFile(path string) bool {
 func MakeDir(dir string) {
 	// 检查文件夹是否存在
 	if _, err := os.Stat(dir); err == nil {
-		return
+		err := os.Mkdir(dir, fs.ModePerm)
+		if err != nil {
+			println("创建文件夹失败:", dir)
+		}
 	}
 
-	// 创建文件夹
-	err := os.Mkdir(dir, 0755)
-	if err != nil {
-		println("创建文件夹失败:", dir)
-	}
 }
 
 func RemoveFile(path string) {
