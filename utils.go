@@ -130,13 +130,14 @@ func MakeDir(dir string) {
 
 func RemoveFile(path string) {
 	err := os.Remove(path)
+	println("删除文件:", path)
 	if err != nil {
 		println("删除文件失败:", path)
 	}
 }
 func RenameMove(oldPath string, newPath string) {
 	err := os.Rename(oldPath, newPath)
-	println("移动文件:", oldPath, "=>", newPath)
+	println("重命名/移动文件:", oldPath, "=>", newPath)
 	if err != nil {
 		println("重命名/移动文件失败:", oldPath, err)
 	}

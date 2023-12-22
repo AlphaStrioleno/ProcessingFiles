@@ -166,28 +166,29 @@ func RenameFile(sourcePath string) {
 			return err
 		}
 
+		if d.IsDir() {
+			return nil
+		}
 		// 如果是文件
-		if !d.IsDir() {
-			file := d.Name()
-			ext := filepath.Ext(file)
-			nameWithoutSuffix := strings.TrimSuffix(file, ext)
-			// 如果在JSON中找到键
-			if fileInfo, exists := data[nameWithoutSuffix]; exists {
-				fileName := fileInfo.Filename
+		file := d.Name()
+		ext := filepath.Ext(file)
+		nameWithoutSuffix := strings.TrimSuffix(file, ext)
+		// 如果在JSON中找到键
+		if fileInfo, exists := data[nameWithoutSuffix]; exists {
+			fileName := fileInfo.Filename
 
-				if fileName == "d" {
-					RemoveFile(path)
-				} else if fileName == "m" {
-					laterPath := filepath.Join(sourcePath, "Later")
-					MakeDir(laterPath)
-					newPath := filepath.Join(laterPath, d.Name())
-					RenameMove(path, newPath)
-				} else if fileName != nameWithoutSuffix {
-					newPath := filepath.Join(filepath.Dir(path), fileName+ext)
-					RenameMove(path, newPath)
-				}
-
+			if fileName == "d" {
+				RemoveFile(path)
+			} else if fileName == "m" {
+				laterPath := filepath.Join(sourcePath, "Later")
+				MakeDir(laterPath)
+				newPath := filepath.Join(laterPath, d.Name())
+				RenameMove(path, newPath)
+			} else if fileName != nameWithoutSuffix {
+				newPath := filepath.Join(filepath.Dir(path), fileName+ext)
+				RenameMove(path, newPath)
 			}
+
 		}
 
 		return nil
