@@ -236,6 +236,9 @@ func GetNumber(sourcePath string) {
 			log.Printf("搜索失败: %v", err)
 			continue
 		}
+		if len(results) == 0 {
+			continue
+		}
 		result := results[0]
 		// 如果没有搜索结果，跳过
 		for _, r := range results {
