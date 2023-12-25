@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"os/user"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -454,7 +455,14 @@ func Run() {
 		helper()
 		return
 	} else if len(args) == 2 {
-		sourcePath = "/root/media"
+		// 获取当前用户
+		currentUser, err := user.Current()
+		if err != nil {
+			log.Fatal(err)
+		}
+		// 获取用户文件夹路径
+		homeDir := currentUser.HomeDir
+		sourcePath = filepath.Join(homeDir, "media/Further")
 	} else {
 		sourcePath = args[2]
 		_, err := os.Stat(sourcePath)
