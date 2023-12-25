@@ -454,7 +454,7 @@ func Run() {
 		helper()
 		return
 	} else if len(args) == 2 {
-		sourcePath = "/root/media"
+		sourcePath = "$HOME/media/Further"
 	} else {
 		sourcePath = args[2]
 		_, err := os.Stat(sourcePath)
