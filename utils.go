@@ -28,7 +28,7 @@ type FileInfo struct {
 // VideoExtensions 视频文件扩展名列表
 var VideoExtensions = map[string]bool{
 	".mp4": true, ".avi": true, ".mkv": true,
-	".flv": true, ".mov": true, ".wmv": true,
+	".iso": true, ".mov": true, ".wmv": true,
 	".rmvb": true, ".ts": true, ".m2ts": true,
 	// 添加其他视频文件扩展名
 }
