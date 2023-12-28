@@ -74,7 +74,7 @@ func MakeDir(dir string) {
 	}
 	err := os.MkdirAll(dir, fs.ModePerm)
 	if err != nil {
-		println("创建文件夹失败:", dir, err)
+		log.Println("创建文件夹失败:", dir, err)
 	}
 
 }
@@ -82,18 +82,18 @@ func MakeDir(dir string) {
 // RemoveFile 删除文件
 func RemoveFile(path string) {
 	err := os.Remove(path)
-	println("删除文件:", path)
+	log.Println("删除文件:", path)
 	if err != nil {
-		println("删除文件失败:", path)
+		log.Println("删除文件失败:", path)
 	}
 }
 
 // RenameMove 重命名/移动文件
 func RenameMove(oldPath string, newPath string) {
 	err := os.Rename(oldPath, newPath)
-	println("重命名/移动文件:", oldPath, "=>", newPath)
+	log.Println("重命名/移动文件:", oldPath, "=>", newPath)
 	if err != nil {
-		println("重命名/移动文件失败:", oldPath, err)
+		log.Println("重命名/移动文件失败:", oldPath, err)
 	}
 }
 
@@ -145,7 +145,7 @@ func CheckAndDeleteEmpty(dir string) {
 	}
 	if len(files) == 0 {
 		err := os.Remove(dir)
-		println("删除文件夹:", dir)
+		log.Println("删除文件夹:", dir)
 		if err != nil {
 			return
 		}

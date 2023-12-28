@@ -17,7 +17,7 @@ import (
 func CleanFile(sourcePath string) {
 	var filesToMove []string
 
-	println("开始清理文件夹:", sourcePath)
+	log.Println("开始清理文件夹:", sourcePath)
 	err := filepath.Walk(sourcePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -55,7 +55,7 @@ func CleanFile(sourcePath string) {
 			existFileCreateTime := existFileInfo.ModTime().Format("20060102150405")
 			existFileNewName := existFileCreateTime + "_" + fileName
 			err = os.Rename(newPath, filepath.Join(sourcePath, existFileNewName))
-			println("重命名已经存在的文件:", newPath, "=>", filepath.Join(sourcePath, existFileNewName))
+			log.Println("重命名已经存在的文件:", newPath, "=>", filepath.Join(sourcePath, existFileNewName))
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -74,7 +74,7 @@ func CleanFile(sourcePath string) {
 	}
 
 	// 删除空文件夹
-	println("开始删除空文件夹")
+	log.Println("开始删除空文件夹")
 	CheckAndDeleteEmpty(sourcePath)
 }
 
@@ -350,6 +350,17 @@ func Run() {
 }
 
 func main() {
+	file, err := os.Create("logfile.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+
+		}
+	}(file)
+	log.SetOutput(file)
 	Run()
 }
 
