@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -156,8 +157,11 @@ func GetNumber(sourcePath string) {
 		if f.IsDir() {
 			continue
 		}
-		name := strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))
-		results, err := app.SearchMovieAll(name, true)
+		// 创建一个空的Data结构体
+		data := Data{}
+		fileName := strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))
+		data.Filename = fileName
+		results, err := app.SearchMovieAll(fileName, true)
 		if err != nil {
 			log.Printf("搜索失败: %v", err)
 			continue
@@ -175,9 +179,6 @@ func GetNumber(sourcePath string) {
 				break
 			}
 		}
-
-		// 创建一个空的Data结构体
-		data := Data{}
 
 		// 处理name
 		if len(result.Actors) == 0 {
@@ -206,9 +207,13 @@ func GetNumber(sourcePath string) {
 				}
 			}
 		}
-		data.Filename = name
+		number := result.Number
 		filePath := filepath.Join(sourcePath, f.Name())
-		newPath := filepath.Join(sourcePath, result.Number+filepath.Ext(f.Name()))
+		matches := regexp.MustCompile(`cd(\d+)$`).FindStringSubmatch(strings.ToLower(fileName))
+		if len(matches) > 1 {
+			number = number + matches[1]
+		}
+		newPath := filepath.Join(sourcePath, number+filepath.Ext(f.Name()))
 		RenameMove(filePath, newPath)
 		data.Path = newPath
 		data.HomePage = result.Homepage
@@ -217,7 +222,7 @@ func GetNumber(sourcePath string) {
 		// 创建一个map，key是id，value是Data结构体
 
 		// 将Data结构体添加到map中，key是id
-		dataMap[result.Number] = data
+		dataMap[number] = data
 	}
 	// 将map转换为JSON
 	jsonData, err := json.Marshal(dataMap)
