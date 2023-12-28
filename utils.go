@@ -9,33 +9,21 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
-	"strconv"
 	"strings"
 )
 
+// Data 数据结构
 type Data struct {
 	Filename string `json:"filename"`
+	Path     string `json:"path"`
 	Name     string `json:"name"`
 	HomePage string `json:"homepage"`
 }
 
+// FileInfo 文件信息
 type FileInfo struct {
 	Filename string `json:"filename"`
 }
-
-// Folder represents a folder in the filesystem with its name and sequence number
-type Folder struct {
-	Name      string
-	SeqNumber int
-}
-
-// Folders is a slice of Folder
-type Folders []Folder
-
-func (f Folders) Len() int           { return len(f) }
-func (f Folders) Less(i, j int) bool { return f[i].SeqNumber > f[j].SeqNumber }
-func (f Folders) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
 
 // VideoExtensions 视频文件扩展名列表
 var VideoExtensions = map[string]bool{
@@ -43,44 +31,6 @@ var VideoExtensions = map[string]bool{
 	".flv": true, ".mov": true, ".wmv": true,
 	".rmvb": true, ".ts": true, ".3gp": true,
 	// 添加其他视频文件扩展名
-}
-
-// GetFolders now returns a map with the base folder name as the key and a list of its variations as the value
-func GetFolders(dir string) (map[string]Folders, error) {
-	folderMap := make(map[string]Folders)
-
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, file := range files {
-		if file.IsDir() {
-			var baseName string
-			var seqNumber int
-
-			if strings.Contains(file.Name(), "(") {
-				baseName = strings.Split(file.Name(), "(")[0]
-				seqNumber, _ = strconv.Atoi(strings.TrimLeft(strings.Split(file.Name(), "(")[1], ")"))
-			} else {
-				baseName = file.Name()
-				seqNumber = -1
-			}
-
-			folder := Folder{
-				Name:      file.Name(),
-				SeqNumber: seqNumber,
-			}
-
-			folderMap[baseName] = append(folderMap[baseName], folder)
-		}
-	}
-
-	for _, folders := range folderMap {
-		sort.Sort(folders)
-	}
-
-	return folderMap, nil
 }
 
 // Notice 通过pushdeer来发送完成通知到手机上
@@ -110,12 +60,13 @@ func Notice() {
 	fmt.Println("响应状态码:", resp.StatusCode)
 }
 
-// 检查文件是否为视频文件
-func isVideoFile(path string) bool {
+// IsVideoFile 检查文件是否为视频文件
+func IsVideoFile(path string) bool {
 	ext := strings.ToLower(filepath.Ext(path))
 	return VideoExtensions[ext]
 }
 
+// MakeDir 创建文件夹
 func MakeDir(dir string) {
 	// 检查文件夹是否存在
 	if _, err := os.Stat(dir); err == nil {
@@ -128,6 +79,7 @@ func MakeDir(dir string) {
 
 }
 
+// RemoveFile 删除文件
 func RemoveFile(path string) {
 	err := os.Remove(path)
 	println("删除文件:", path)
@@ -135,6 +87,8 @@ func RemoveFile(path string) {
 		println("删除文件失败:", path)
 	}
 }
+
+// RenameMove 重命名/移动文件
 func RenameMove(oldPath string, newPath string) {
 	err := os.Rename(oldPath, newPath)
 	println("重命名/移动文件:", oldPath, "=>", newPath)
@@ -143,6 +97,7 @@ func RenameMove(oldPath string, newPath string) {
 	}
 }
 
+// ReadJSON 读取json文件
 func ReadJSON(path string) []byte {
 	file, err := os.Open(path)
 	if err != nil {
@@ -165,14 +120,9 @@ func ReadJSON(path string) []byte {
 	}
 	return b
 
-	//data := make(map[string]FileInfo)
-	//err = json.Unmarshal(b, &data)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//return data
 }
 
+// CheckAndDeleteEmpty 检查并删除空文件夹
 func CheckAndDeleteEmpty(dir string) {
 	files, err := os.ReadDir(dir)
 	if err != nil {
@@ -202,8 +152,8 @@ func CheckAndDeleteEmpty(dir string) {
 	}
 }
 
-// 检查文件大小是否小于120MB
-func isLessThan120MB(path string) bool {
+// IsLessThan120MB 检查文件大小是否小于120MB
+func IsLessThan120MB(path string) bool {
 	file, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
@@ -220,4 +170,25 @@ func isLessThan120MB(path string) bool {
 	sizeMB := size / 1024 / 1024 // 文件大小，单位为MB
 
 	return sizeMB < 120
+}
+
+// PathSet 获取文件夹下的文件/文件夹列表
+func PathSet(sourcePath string, kind string) map[string]bool {
+	path, err := os.ReadDir(sourcePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	pathSet := make(map[string]bool)
+	for _, f := range path {
+		if kind == "file" {
+			if !f.IsDir() {
+				pathSet[f.Name()] = true
+			}
+		} else if kind == "folder" {
+			if f.IsDir() {
+				pathSet[f.Name()] = true
+			}
+		}
+	}
+	return pathSet
 }
