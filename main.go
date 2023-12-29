@@ -160,7 +160,7 @@ func GetNumber(sourcePath string) {
 		// 创建一个空的Data结构体
 		data := Data{}
 		fileName := strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))
-		data.OrginalFilename = fileName
+		data.OriginalFilename = fileName
 		results, err := app.SearchMovieAll(fileName, true)
 		if err != nil {
 			log.Printf("搜索失败: %v", err)
@@ -320,8 +320,8 @@ func Run() {
 		homeDir := currentUser.HomeDir
 		sourcePath = filepath.Join(homeDir, "media/Further")
 		destPath = filepath.Join(homeDir, "media/output")
-		log.Println("开始处理文件夹:", sourcePath)
-		log.Println("目标文件夹为:", destPath)
+		fmt.Println("开始处理文件夹:", sourcePath)
+		fmt.Println("目标文件夹为:", destPath)
 	} else {
 		sourcePath = args[2]
 		_, err := os.Stat(sourcePath)
@@ -355,17 +355,6 @@ func Run() {
 }
 
 func main() {
-	file, err := os.Create("logfile.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-
-		}
-	}(file)
-	log.SetOutput(file)
 	Run()
 }
 
