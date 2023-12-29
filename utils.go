@@ -14,10 +14,10 @@ import (
 
 // Data 数据结构
 type Data struct {
-	Filename string `json:"filename"`
-	Path     string `json:"path"`
-	Name     string `json:"name"`
-	HomePage string `json:"homepage"`
+	OrginalFilename string `json:"filename"`
+	Path            string `json:"path"`
+	Actors          string `json:"actors"`
+	HomePage        string `json:"homepage"`
 }
 
 // FileInfo 文件信息

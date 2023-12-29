@@ -160,7 +160,7 @@ func GetNumber(sourcePath string) {
 		// 创建一个空的Data结构体
 		data := Data{}
 		fileName := strings.TrimSuffix(f.Name(), filepath.Ext(f.Name()))
-		data.Filename = fileName
+		data.OrginalFilename = fileName
 		results, err := app.SearchMovieAll(fileName, true)
 		if err != nil {
 			log.Printf("搜索失败: %v", err)
@@ -182,26 +182,26 @@ func GetNumber(sourcePath string) {
 
 		// 处理name
 		if len(result.Actors) == 0 {
-			data.Name = "佚名"
+			data.Actors = "佚名"
 		} else if len(result.Actors) == 1 {
-			data.Name = result.Actors[0]
+			data.Actors = result.Actors[0]
 		} else {
 			// 循环处理names, id, file
 			for _, name := range result.Actors {
 				// 拼接names
-				data.Name += name + ","
+				data.Actors += name + ","
 
-				if len(data.Name) > 50 {
+				if len(data.Actors) > 50 {
 					if len(result.Actors) >= 3 {
 						// 如果超过50字符且names长度大于等于3，取前三个name拼接
-						data.Name = result.Actors[0] + "," + result.Actors[1] + "," + result.Actors[2]
-						if len(data.Name) > 50 {
+						data.Actors = result.Actors[0] + "," + result.Actors[1] + "," + result.Actors[2]
+						if len(data.Actors) > 50 {
 							// 如果还是超过50字符，取前50个字符
-							data.Name = data.Name[:50]
+							data.Actors = data.Actors[:50]
 						}
 					} else {
 						// 如果names长度小于3，直接取前50个字符
-						data.Name = data.Name[:50]
+						data.Actors = data.Actors[:50]
 					}
 
 				}
@@ -248,7 +248,7 @@ func GetNumber(sourcePath string) {
 }
 
 // MoveFile 移动文件
-func MoveFile(sourcePath string, destPath string) {
+func MoveFile(destPath string) {
 	// 读取json文件
 	data := make(map[string]Data)
 	//r := ReadJSON("output.json", data).(map[string]Data)
@@ -259,18 +259,21 @@ func MoveFile(sourcePath string, destPath string) {
 	}
 	// 遍历data
 	for number, information := range data {
-		name := information.Name
+		name := information.Actors
 		// 如果Name为空，跳过
 		if name == "" {
 			continue
 		}
-		nameFolder := filepath.Join(destPath, name)
+		if name == "d" {
+			RemoveFile(information.Path)
+		}
+		destNameFolder := filepath.Join(destPath, name)
 		// 如果name文件夹不存在，创建name文件夹，存在跳过
-		MakeDir(nameFolder)
-		destNumberFolder := filepath.Join(sourcePath, number)
+		MakeDir(destNameFolder)
+		destNumberFolder := filepath.Join(destNameFolder, number)
 		destFilePath := filepath.Join(destNumberFolder, number+filepath.Ext(filepath.Base(information.Path)))
 
-		destNumberFolderSet := PathSet(nameFolder, "folder")
+		destNumberFolderSet := PathSet(destNameFolder, "folder")
 		if destNumberFolderSet[number] {
 			// 如果number文件夹已经存在，检查第number文件夹里的文件和data.json里的文件是否一致
 			// 如果有相同的视频文件，删除原来的文件
@@ -335,7 +338,7 @@ func Run() {
 	if args[1] == "n" {
 		GetNumber(sourcePath)
 	} else if args[1] == "f" {
-		MoveFile(sourcePath, destPath)
+		MoveFile(destPath)
 	} else if args[1] == "c" {
 		CleanFile(sourcePath)
 	} else if args[1] == "j" {
