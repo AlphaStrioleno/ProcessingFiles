@@ -251,7 +251,6 @@ func GetNumber(sourcePath string) {
 func MoveFile(destPath string) {
 	// 读取json文件
 	data := make(map[string]Data)
-	//r := ReadJSON("output.json", data).(map[string]Data)
 	r := ReadJSON("data.json")
 	err := json.Unmarshal(r, &data)
 	if err != nil {
@@ -340,6 +339,7 @@ func Run() {
 	if args[1] == "n" {
 		GetNumber(sourcePath)
 	} else if args[1] == "f" {
+		fmt.Println("开始移动文件")
 		MoveFile(destPath)
 	} else if args[1] == "c" {
 		CleanFile(sourcePath)
