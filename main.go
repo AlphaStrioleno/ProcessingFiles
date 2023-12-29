@@ -320,6 +320,8 @@ func Run() {
 		homeDir := currentUser.HomeDir
 		sourcePath = filepath.Join(homeDir, "media/Further")
 		destPath = filepath.Join(homeDir, "media/output")
+		log.Println("开始处理文件夹:", sourcePath)
+		log.Println("目标文件夹为:", destPath)
 	} else {
 		sourcePath = args[2]
 		_, err := os.Stat(sourcePath)
