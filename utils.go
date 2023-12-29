@@ -16,7 +16,7 @@ import (
 type Data struct {
 	OriginalFilename string `json:"filename"`
 	Path             string `json:"path"`
-	Name             string `json:"actors"`
+	Actors           string `json:"name"`
 	HomePage         string `json:"homepage"`
 }
 

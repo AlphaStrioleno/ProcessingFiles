@@ -182,26 +182,26 @@ func GetNumber(sourcePath string) {
 
 		// 处理name
 		if len(result.Actors) == 0 {
-			data.Name = "佚名"
+			data.Actors = "佚名"
 		} else if len(result.Actors) == 1 {
-			data.Name = result.Actors[0]
+			data.Actors = result.Actors[0]
 		} else {
 			// 循环处理names, id, file
 			for _, name := range result.Actors {
 				// 拼接names
-				data.Name += name + ","
+				data.Actors += name + ","
 
-				if len(data.Name) > 50 {
+				if len(data.Actors) > 50 {
 					if len(result.Actors) >= 3 {
 						// 如果超过50字符且names长度大于等于3，取前三个name拼接
-						data.Name = result.Actors[0] + "," + result.Actors[1] + "," + result.Actors[2]
-						if len(data.Name) > 50 {
+						data.Actors = result.Actors[0] + "," + result.Actors[1] + "," + result.Actors[2]
+						if len(data.Actors) > 50 {
 							// 如果还是超过50字符，取前50个字符
-							data.Name = data.Name[:50]
+							data.Actors = data.Actors[:50]
 						}
 					} else {
 						// 如果names长度小于3，直接取前50个字符
-						data.Name = data.Name[:50]
+						data.Actors = data.Actors[:50]
 					}
 
 				}
@@ -258,7 +258,7 @@ func MoveFile(destPath string) {
 	}
 	// 遍历data
 	for number, information := range data {
-		name := information.Name
+		name := information.Actors
 		// 如果Name为空，跳过
 		if name == "" {
 			continue
